@@ -1,0 +1,182 @@
+================================================================================
+DATASET: example_env_chl.csv (ENV – Chlorophyll-a)
+
+lat [float32] — geographic latitude (deg) — spatial key
+lon [float32] — geographic longitude (deg) — spatial key
+time_bin [datetime64] — discrete time window (e.g., weekly/8-day) — temporal key
+CHL_raw [float32] — chlorophyll-a concentration (mg m⁻³) — predictor (productivity/foraging proxy)
+
+================================================================================
+DATASET: example_env_sst.csv (ENV – Sea Surface Temperature)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+SST_raw [float32] — sea surface temperature (°C) — predictor (thermal habitat)
+
+================================================================================
+DATASET: example_env_dsst.csv (ENV – SST Gradient Magnitude)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+dSST_raw [float32] — |∇SST| magnitude (°C/km or grid units) — predictor (fronts/prey aggregation)
+
+================================================================================
+DATASET: example_env_eke.csv (ENV – Eddy Kinetic Energy)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+EKE_raw [float32] — eddy kinetic energy (m² s⁻²) — predictor (mesoscale activity)
+
+================================================================================
+DATASET: example_env_depth.csv (ENV – Bathymetry)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+Depth_raw [float32] — seafloor depth (m) — predictor (habitat constraint)
+
+================================================================================
+DATASET: example_env_light.csv (ENV – Light/Daylength/PAR Proxy)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+Light_raw [float32] — normalized light/daylength proxy (0–1) — predictor (behavioral cue)
+
+================================================================================
+DATASET: example_effort.csv (ENV – Sampling/Detection Effort)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+Effort [float32] — normalized effort or detectability (a.u.) — bias correction (feature and/or training weights/offset)
+
+================================================================================
+DATASET: example_maxent.csv (ENV – MAXENT Prior)
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+S_maxent [float32] — MAXENT suitability/relative probability (0–1) — prior feature and/or soft anchor (logit prior) for BINN
+
+================================================================================
+DATASET: example_tag_raw.csv (TAG – single wide table)
+
+time_h [float32] — hours since reference — auxiliary timeline
+date [datetime64] — timestamp — temporal alignment
+latitude [float32] — instantaneous latitude (deg) — to build keys
+longitude [float32] — instantaneous longitude (deg) — to build keys
+pressure_dbar [float32] — pressure (dbar) — depth/dive dynamics
+depth_m [float32] — depth (m) — vertical foraging pattern
+temperature_C [float32] — in-situ temperature at tag (°C) — microthermal context
+accel_x [float32] — accelerometer X (g or m s⁻²) — activity signal
+accel_y [float32] — accelerometer Y — activity signal
+accel_z [float32] — accelerometer Z — activity signal
+vel_x [float32] — velocity X (m s⁻¹) — movement dynamics
+vel_y [float32] — velocity Y — movement dynamics
+vel_z [float32] — velocity Z — movement dynamics
+pH [float32] — acidity (pH units) — environmental/physiology cue (if valid)
+mag_x [float32] — magnetometer X (µT) — heading/orientation proxy
+mag_y [float32] — magnetometer Y — heading/orientation proxy
+mag_z [float32] — magnetometer Z — heading/orientation proxy
+battery_soc_% [float32] — battery state of charge (%) — data quality/availability control
+capacitive [float32] — capacitive sensor (a.u.) — device/contact context
+odba [float32] — overall dynamic body acceleration = |ax|+|ay|+|az| — behavior/foraging intensity proxy
+speed_ms [float32] — speed magnitude (m s⁻¹) — locomotion intensity
+heading_deg [float32] — heading = atan2(mag_y, mag_x) (deg) — directional behavior
+
+Role: raw on-animal sensor streams used to derive/aggregate TAG features per (lat, lon, time_bin).
+
+================================================================================
+DATASET: example_tag_agg_bin.csv (TAG aggregated per (lat, lon, time_bin))
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+pressure_dbar [float32] — median pressure (dbar) — predictor
+depth_m [float32] — median depth (m) — predictor
+temperature_C [float32] — median in-situ temperature (°C) — predictor
+odba [float32] — median ODBA — predictor (foraging activity)
+speed_ms [float32] — median speed (m s⁻¹) — predictor
+heading_deg [float32] — median heading (deg) — predictor
+pH [float32] — median pH — predictor
+battery_soc_% [float32] — mean battery SoC (%) — quality control feature
+capacitive [float32] — mean capacitive (a.u.) — device/state feature
+
+Role: behavior/context features aligned to the same spatiotemporal keys as ENV.
+
+================================================================================
+DATASET: example_obt_env_tag.csv (ONE BIG TABLE — ENV + TAG) FINAL FOR TRAINING
+
+lat [float32] — spatial key
+lon [float32] — spatial key
+time_bin [datetime64] — temporal key
+
+ENV raw predictors:
+SST_raw [float32] — sea surface temperature (°C) — predictor
+CHL_raw [float32] — chlorophyll-a (mg m⁻³) — predictor
+dSST_raw [float32] — |∇SST| magnitude — predictor
+EKE_raw [float32] — eddy kinetic energy (m² s⁻²) — predictor
+Depth_raw [float32] — bathymetry (m) — predictor
+Light_raw [float32] — light/daylength proxy (0–1) — predictor
+
+ENV normalized (z-scores):
+SST_raw_z [float32] — standardized SST — scaled predictor
+CHL_raw_z [float32] — standardized CHL — scaled predictor
+dSST_raw_z [float32] — standardized |∇SST| — scaled predictor
+EKE_raw_z [float32] — standardized EKE — scaled predictor
+Depth_raw_z [float32] — standardized depth — scaled predictor
+Light_raw_z [float32] — standardized light — scaled predictor
+
+Priors / sampling:
+Effort [float32] — effort/detectability (a.u.) — bias correction feature/weights/offset
+S_maxent [float32] — MAXENT suitability (0–1) — prior (feature and/or soft anchor)
+
+TAG aggregated predictors:
+pressure_dbar [float32] — median pressure — behavior/environment context
+depth_m [float32] — median depth (m) — behavior context
+temperature_C [float32] — median in-situ temp (°C) — microthermal context
+odba [float32] — median ODBA — activity/foraging proxy
+speed_ms [float32] — median speed (m s⁻¹) — activity proxy
+heading_deg [float32] — median heading (deg) — directional behavior
+pH [float32] — median pH — chemical context
+battery_soc_% [float32] — mean battery SoC (%) — quality control
+capacitive [float32] — mean capacitive — device/state
+
+Role: This is the final integrated training table used as input to the BINN.
+(If you train multi-species and supervised labels, add species, species_id, label to this table.)
+
+================================================================================
+NOTES (shared across datasets)
+
+• Keys: (lat, lon, time_bin) must be consistently defined (same binning anchor and spatial resolution).
+• Units: confirm dSST_raw units (°C/km vs grid units) and EKE source scale; CHL in mg m⁻³.
+• Normalization: z-scores typically computed per region/season to improve spatiotemporal robustness.
+• Effort: can also be used as sample weights or log-offset during training.
+• MAXENT prior: may be used as a feature and/or as a logit-prior regularizer in the BINN.
+
+================================================================================
+OPTIONAL OUTPUT DATASETS (PREDICTIONS)
+
+PRED_GRID (model outputs per grid cell and time)
+lat [float32], lon [float32], time_bin [datetime64] — keys
+species [category], species_id [int16] — predicted species (if multi-species)
+P_forage [float32] — predicted probability of foraging zone (0–1)
+P_uncertainty [float32] — (optional) predictive uncertainty (e.g., ensemble SD)
+model_version [string] — model fingerprint
+features_hash [string] — feature stack fingerprint
+threshold [float32] — (optional) binarization threshold used for zone delineation
+
+ZONES_POLYGONS (derived cartographic product)
+zone_id [string] — polygon id
+species, species_id — species metadata
+time_start, time_end [datetime64] — coverage window
+area_km2 [float32] — polygon area
+mean_P, max_P [float32] — probability stats within zone
+threshold_used [float32] — threshold applied
+geom [WKT/GeoJSON] — geometry
+
+================================================================================
