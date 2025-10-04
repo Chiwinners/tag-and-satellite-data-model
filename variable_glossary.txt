@@ -1,0 +1,92 @@
+BILINGUAL VARIABLE GLOSSARY — BINN PROJECT
+==========================================
+
+Format: VARIABLE / SIGLAS (EN) — (ES) : Definition [Units] | Role in the model
+
+--- CORE KEYS ---
+lat — (latitud): Geographic latitude [degrees] | Grid key for joins and prediction.
+lon — (longitud): Geographic longitude [degrees] | Grid key for joins and prediction.
+time_bin — (ventana temporal): Discrete time window (e.g., daily/weekly/8-day) aligned across datasets [datetime] | Temporal key; all variables aggregated to this bin.
+
+--- IDENTIFIERS & LABELS ---
+species — (especie): Shark species name [category] | Condition/model by species; can be embedded.
+species_id — (id_especie): Numeric species ID [int] | Compact species code for modeling.
+label — (etiqueta): 1 = foraging presence, 0 = background [binary] | Supervised target for BINN.
+
+--- PRIORS & SAMPLING ---
+S_maxent — (idoneidad_MAXENT): Suitability / relative probability from a MAXENT model [0–1] | Prior feature and/or soft anchor (logit prior) in BINN.
+Effort — (esfuerzo): Sampling/detection effort (e.g., tag track density, receiver coverage) [arbitrary normalized units] | Bias correction; as feature and/or training weights/offset.
+
+--- ENVIRONMENTAL (ENV) — RAW ---
+SST_raw — (TSM_cruda): Sea Surface Temperature [°C] | Thermal habitat driver.
+CHL_raw — (CLOROFILA_cruda): Chlorophyll-a concentration [mg m^-3] | Productivity/foraging proxy.
+dSST_raw — (gradiente_TSM_crudo): |∇SST| magnitude [°C per km or gridded units] | Fronts; prey aggregation signal.
+EKE_raw — (EKE_cruda): Eddy Kinetic Energy [m^2 s^-2] | Mesoscale activity; retention/aggregation.
+Depth_raw — (batimetría_cruda): Seafloor depth [m] | Habitat constraint; coastal vs oceanic structure.
+Light_raw — (luz_cruda): Daylength/PAR proxy [0–1] | Photoperiod/visibility cue for behavior.
+
+--- ENVIRONMENTAL (ENV) — NORMALIZED (Z-SCORES) ---
+SST_raw_z — (TSM_z): Standardized SST (z-score) [unitless] | Scaled input; comparable across space/time.
+CHL_raw_z — (CLOROFILA_z): Standardized CHL (z-score) [unitless] | Scaled input; robust to seasonal baselines.
+dSST_raw_z — (gradiente_TSM_z): Standardized |∇SST| (z-score) [unitless] | Highlights anomalous fronts.
+EKE_raw_z — (EKE_z): Standardized EKE (z-score) [unitless] | Relative mesoscale anomaly.
+Depth_raw_z — (batimetría_z): Standardized depth (z-score) [unitless] | Relative depth class.
+Light_raw_z — (luz_z): Standardized light (z-score) [unitless] | Relative photoperiod anomaly.
+
+--- TAG (ON-ANIMAL SENSORS) — RAW ---
+time_h — (tiempo_h): Hours since start or reference [h] | Auxiliary timeline.
+date — (fecha): Timestamp per sample [datetime] | Temporal alignment.
+latitude — (latitud): Instantaneous latitude [degrees] | To build (lat, lon, time_bin).
+longitude — (longitud): Instantaneous longitude [degrees] | To build (lat, lon, time_bin).
+pressure_dbar — (presión_dbar): Pressure from sensor [dbar] | Depth proxy / dive dynamics.
+depth_m — (profundidad_m): Depth estimate [m] | Foraging depth patterns.
+temperature_C — (temperatura_°C): In-situ temperature at tag [°C] | Microthermal context.
+accel_x / accel_y / accel_z — (acel_x/y/z): Accelerometer axes [g or m s^-2] | Activity/behavior signals.
+vel_x / vel_y / vel_z — (vel_x/y/z): Velocity components [m s^-1] | Movement dynamics.
+pH — (pH): Acidity proxy [pH units] | Environmental/physiology cue (if available/calibrated).
+mag_x / mag_y / mag_z — (mag_x/y/z): Magnetometer axes [µT] | Heading/orientation proxy.
+battery_soc_% — (batería_%SoC): Battery state-of-charge [%] | Data quality/availability control.
+capacitive — (capacitivo): Capacitive sensor reading [a.u.] | Wet/dry or contact indicator (device-specific).
+
+--- TAG — DERIVED PER SAMPLE (THEN AGGREGATED TO time_bin) ---
+odba — (ODBA): Overall Dynamic Body Acceleration = |ax|+|ay|+|az| [g or m s^-2] | Proxy for energetic expenditure/foraging intensity.
+speed_ms — (velocidad_ms): Speed magnitude = ||v|| [m s^-1] | Locomotion intensity.
+heading_deg — (rumbo_grados): Heading = atan2(mag_y, mag_x) [degrees] | Orientation relative to geomagnetic frame.
+
+--- TAG — AGGREGATED FEATURES PER (lat, lon, time_bin) ---
+pressure_dbar (median) — (presión_mediana): Median pressure [dbar] | Typical dive pressure per bin.
+depth_m (median) — (profundidad_mediana): Median depth [m] | Typical foraging depth.
+temperature_C (median) — (temperatura_mediana): Median in-situ temperature [°C] | Stable microthermal cue.
+odba (median) — (ODBA_mediana): Median ODBA [g or m s^-2] | Foraging activity level.
+speed_ms (median) — (velocidad_mediana): Median speed [m s^-1] | Activity state.
+heading_deg (median) — (rumbo_mediano): Median heading [degrees] | Directional behavior.
+pH (median) — (pH_mediana): Median pH [pH] | Local chemical environment.
+battery_soc_% (mean) — (batería_promedio): Mean SoC [%] | Data quality/availability indicator.
+capacitive (mean) — (capacitivo_promedio): Mean capacitive [a.u.] | Device/state context.
+
+--- HYDROPHONE (IF AVAILABLE) — AGGREGATED PER BIN ---
+prey_prob_fish — (prob_presa_peces): Probability/mean confidence of fish prey presence [0–1] | Foraging context signal.
+prey_prob_cephalopod — (prob_presa_cefalópodos): Probability/mean confidence for cephalopods [0–1] | Alternative prey signal.
+prey_prob_crustacean — (prob_presa_crustáceos): Probability/mean confidence for crustaceans [0–1] | Alternative prey signal.
+hardness_conf — (conf_dureza): Mean confidence for prey hardness class [0–1] | Handling/foraging mode proxy.
+size_conf — (conf_tamaño): Mean confidence for prey size class [0–1] | Prey size context.
+
+--- MODEL ROLES (SUMMARY) ---
+• Keys: lat, lon, time_bin — definen cada celda espacio-temporal del modelo.
+• Predictors (ENV z & raw): SST_z, CHL_z, dSST_z, EKE_z, Depth_z, Light_z (+ sus crudos si los usas).
+• TAG features (aggregated): odba, speed_ms, depth_m, etc. — comportamiento y contexto in-situ.
+• Prior: S_maxent — entrada como feature y/o regularizador (logit prior) para BINN.
+• Effort: corrige sesgo de muestreo; usar como feature y/o weights/offset.
+• Label: presencia de forrajeo (1) vs background (0) — objetivo supervisado.
+• Species/ID: si el modelo es multi-especie, usar embedding o one-hot; evalúa por especie.
+
+--- UNITS & NORMALIZATION ---
+• z-scores: (x - mean) / std, calculados por región/estación recomendablemente.
+• dSST units: si trabajas en grilla, documenta si es por °C/celda o °C/km.
+• EKE: verificar origen (altimetría vs reanálisis) y rango típico para evitar escalas erróneas.
+
+--- NOTES ---
+• time_bin: alinear todos los productos (p.ej., semanal W-MON o 8-días MODIS).
+• nearest-join: en producción, hacer joins espacio-temporales con tolerancias o remuestrear a grilla común.
+• calibration: si requieres probabilidades calibradas, aplicar Platt/Isotonic sobre un hold-out.
+"""
