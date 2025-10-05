@@ -40,9 +40,6 @@ def load_file(filename):
             "surface_height": surface_h
         })
 
-        # Save to CSV
-        df.to_csv("env_depth.csv", index=False)
-    
     return df
 
 def main():
