@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "seaflower_convexhull",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "SW", "lat": 12.00284, "lon": -81.99937 }, "geometry": { "type": "Point", "coordinates": [ -81.99937, 12.00284 ] } },
+{ "type": "Feature", "properties": { "name": "NW", "lat": 14.98947, "lon": -81.99937 }, "geometry": { "type": "Point", "coordinates": [ -81.99937, 14.98947 ] } },
+{ "type": "Feature", "properties": { "name": "NE", "lat": 14.98947, "lon": -79.83031 }, "geometry": { "type": "Point", "coordinates": [ -79.83031, 14.98947 ] } },
+{ "type": "Feature", "properties": { "name": "SE", "lat": 12.00284, "lon": -79.83031 }, "geometry": { "type": "Point", "coordinates": [ -79.83031, 12.00284 ] } }
+]
+}
