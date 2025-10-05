@@ -7,3 +7,4 @@ torch
 geopandas
 fiona
 earthaccess
+humanize 

@@ -1,0 +1,22 @@
+# source
+https://oceandata.sci.gsfc.nasa.gov
+
+# dataset
+https://oceandata.sci.gsfc.nasa.gov/l3/order/extract_preview/
+
+# parameters
+ Product Status: Standard
+ Sensor: Aqua-MODIS
+ Products: Photosynthetically Available Radiation  
+  par
+ 
+ Period: Daily
+ Start Date: 2014-01-01
+ End Date: 2017-12-31
+ Type: Binned
+
+# region
+ North: 14.9895
+ South: 12.0028
+ West: -81.9994
+ East: -79.8303

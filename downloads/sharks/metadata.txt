@@ -1,0 +1,38 @@
+# source
+https://search.dataone.org
+
+# dataset
+https://search.dataone.org/view/10.24431/rw1k329
+
+# parameters
+    General
+    Cited Identifier
+    https://doi.org/10.24431/rw1k329
+    Abstract
+    This dataset contains Argos-based position estimates that represent the movements of a pelagic predator, the blue shark (Prionace glauca), in the Gulf Stream region and broader North Atlantic Ocean using electronic tags. We collected >2,000 tracking days recorded by 15 instrumented individuals over a three year period. Each individual shark was assigned a unique identification number that includes Taxononomic Serial Number (TSN) from Integrated Taxonomic Information System, tagging year and satellite tag Platform Terminal Transmission (PTT) number as "TSN_YR_PTT". We include one data file (.csv) per individual, a metadata table that provides additional information on size, sex and other metrics, and a metadata table that indicates the date range for data that was manually removed prior to archiving: 160424_2013_132346pnas_atn.csv 160424_2014_141195pnas_atn.csv 160424_2015_141261pnas_atn.csv 160424_2015_141264pnas_atn.csv 160424_2015_141268pnas_atn.csv 160424_2015_141270pnas_atn.csv 160424_2016_106744pnas_atn.csv 160424_2016_106745pnas_atn.csv 160424_2016_106746pnas_atn.csv 160424_2016_106747pnas_atn.csv 160424_2016_106748pnas_atn.csv 160424_2016_141262pnas_atn.csv 160424_2016_141263pnas_atn.csv 160424_2016_141265pnas_atn.csv 160424_2016_141266pnas_atn.csv 160424_2016_165927pnas_atn.csv 160424_2016_165928pnas_atn.csv Braun_atn_tag_deployment_metadata.csv cut_dates_atn.csv
+    Purpose
+    This dataset was collected to test the influence of mesoscale eddies on a model pelagic predator.
+    Publication Date
+    2019-07-01
+    Topic Categories
+    Topic
+    oceans
+    Descriptive Keywords
+    Keyword
+    OCEAN > ATLANTIC OCEAN
+    Type
+    place
+    Thesaurus
+    GCMD Locations Keywords version 8.4.1
+    Keyword
+    Prionace glauca
+    blue shark, requin bleu, tiburón azul
+    Thesaurus
+    ITIS
+    Keyword
+    EARTH SCIENCE > AGRICULTURE > ANIMAL SCIENCE > ANIMAL ECOLOGY AND BEHAVIOR
+    EARTH SCIENCE > OCEANS
+    Type
+    theme
+    Thesaurus
+    GCMD Science Keywords version 8.4.1

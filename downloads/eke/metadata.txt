@@ -1,0 +1,16 @@
+# source
+https://cds.climate.copernicus.eu/
+
+# dataset
+https://cds.climate.copernicus.eu/datasets/satellite-sea-level-global?tab=overview
+
+# dates
+FROM: 01 JAN 2014
+TO: 31 DEC 2017
+
+# command
+python extract/python/eke.py
+
+# approx. size
+1448 Granules
+Est. Size ~ 11Gb
