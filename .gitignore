@@ -1,6 +1,7 @@
 .venv
 .env
 .dodsrc
+local_tests/
 
 downloads/clorophyll/data
 downloads/depth/data

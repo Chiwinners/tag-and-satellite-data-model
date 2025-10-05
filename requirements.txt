@@ -16,3 +16,5 @@ cftime
 h5py
 pyarrow
 rioxarray
+azure-storage-blob
+python-dotenv
