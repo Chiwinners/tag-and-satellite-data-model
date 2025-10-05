@@ -8,3 +8,11 @@ geopandas
 fiona
 earthaccess
 humanize 
+matplotlib
+h5netcdf
+netCDF4
+scipy
+cftime
+h5py
+pyarrow
+rioxarray

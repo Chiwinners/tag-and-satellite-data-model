@@ -1,8 +1,15 @@
 .venv
 .env
 .dodsrc
+
 downloads/clorophyll/data
 downloads/depth/data
 downloads/sst/data
 downloads/eke/data
 downloads/light/data
+
+transform/clorophyll/data
+transform/depth/data
+transform/sst/data
+transform/eke/data
+transform/light/data
