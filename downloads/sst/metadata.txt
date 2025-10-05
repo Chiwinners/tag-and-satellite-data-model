@@ -1,0 +1,17 @@
+# dataset
+ASTER L2 Surface Kinetic Temperature V004
+
+# seaflower region
+SW: 12.00284,-81.99937
+NE: 14.98947,-79.83031
+
+# dates
+FROM: 01 JAN 2014
+TO: 31 DEC 2017
+
+# command
+python extract/python/sst.py -o downloads/sst/data/
+
+# approx. size
+162 Granules
+Est. Size 125.0 MB

@@ -1,0 +1,20 @@
+# source
+https://search.earthdata.nasa.gov/
+
+# dataset
+ATLAS/ICESat-2 L3A Along Track Coastal and Nearshore Bathymetry V001
+
+# seaflower region
+SW: 12.00284,-81.99937
+NE: 14.98947,-79.83031
+
+# dates
+FROM: 01 JAN 2019
+TO: 31 DEC 2021
+
+# command
+python extract/python/depth.py -o downloads/depth/data/
+
+# approx. size
+226 Granules
+Est. Size 66.2 GB

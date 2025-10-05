@@ -1,4 +1,6 @@
-downloads
 .venv
 .env
 .dodsrc
+downloads/clorophyll/data
+downloads/depth/data
+downloads/sst/data

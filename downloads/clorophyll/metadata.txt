@@ -1,0 +1,20 @@
+# source
+https://search.earthdata.nasa.gov/
+
+# dataset
+Aqua MODIS Level-2 Regional Ocean Color (OC) Data, version 2022.0
+
+# seaflower region
+SW: 12.00284,-81.99937
+NE: 14.98947,-79.83031
+
+# dates
+FROM: 01 JAN 2014
+TO: 31 DEC 2017
+
+# command
+python extract/python/clorophyll.py -o downloads/clorophyll/data/
+
+# approx. size
+1.7k Granules
+89.8 GB
