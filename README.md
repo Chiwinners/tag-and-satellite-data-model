@@ -77,28 +77,18 @@ Both can be exported as rasters, tiles, or vector **GeoJSON** (contours/isolines
 
 ```mermaid
 flowchart LR
-  A[Downloads (OB.DAAC / AVISO / other)
-extract/] --> B[Raw samples per source
- downloads/<var>/sample/*]
-  B --> C[Inspect & QC
- transform/<var>/inspect.ipynb]
-  C --> D[Partitioned Parquet
- transform/<var>/sample/year=/month=]
-  D --> E[Unification (OBT)
- utils/unify_datasets.py -> data/ schema]
-  E --> F1[MaxEnt training
- model/train_maxent.py]
-  F1 --> G1[Suitability S(s,t)]
-  E --> F2[BINN training
- model/train_binn.py]
+  A["Downloads (OB.DAAC / AVISO / other)<br/>extract/"] --> B["Raw samples per source<br/>downloads/&lt;var&gt;/sample/*"]
+  B --> C["Inspect & QC<br/>transform/&lt;var&gt;/inspect.ipynb"]
+  C --> D["Partitioned Parquet<br/>transform/&lt;var&gt;/sample/year=/month="]
+  D --> E["Unification (OBT)<br/>utils/unify_datasets.py → data/schema"]
+  E --> F1["MaxEnt training<br/>model/train_maxent.py"]
+  F1 --> G1["Suitability S(s,t)"]
+  E --> F2["BINN training<br/>model/train_binn.py"]
   G1 --> F2
-  F2 --> G2[Foraging probability
- P(FH=1|·)]
-  G1 --> H[Prediction/Export
- model/predict.py -> GeoJSON]
+  F2 --> G2["Foraging probability<br/>P(FH=1|·)"]
+  G1 --> H["Prediction / Export<br/>model/predict.py → GeoJSON"]
   G2 --> H
-  H --> I[Publish to Azure
- load/load.py -> web app]
+  H --> I["Publish to Azure<br/>load/load.py → web app"]
 ```
 
 **Key artifacts.**  
