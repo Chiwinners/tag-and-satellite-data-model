@@ -56,11 +56,11 @@ We further predict **foraging behavior** with a BINN that integrates:
 
 Let $\mathbf{z}(s,t) = [\mathbf{x}(s,t), \mathbf{z}_{\text{tag}}(s,t)]$. The BINN outputs a **foraging probability**:
 
-```math
+$$
 P(\mathrm{FH}=1 \mid \mathbf{z}(s,t)) = \sigma\!\Big( g_{\theta}(\mathbf{z}(s,t)) + \alpha \cdot \operatorname{logit}\!\big(S(s,t)\big) + \lambda \cdot R_{\mathrm{SF}}(s) \Big)
-```
+$$
 
-where \( g_{\theta}(\cdot) \) is a neural network (likelihood term), \( \operatorname{logit}(S)=\ln\!\frac{S}{1-S} \) injects **MaxEnt** as a **prior** (weight \( \alpha \)), and \( R_{\mathrm{SF}}(s) \) is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by \( \lambda \).
+where $g_{\theta}(\cdot)$ is a neural network (likelihood term), $\operatorname{logit}(S)=\ln\!\frac{S}{1-S}$ injects **MaxEnt** as a **prior** (weight $\alpha$), and $R_{\mathrm{SF}}(s)$ is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by $\lambda$.
 
 
 **Why BINN?** BINNs allow us to (i) retain a **principled prior** from presence-only ecology (MaxEnt), (ii) **fuse heterogeneous signals** (environment + tag dynamics), and (iii) **encode spatial knowledge** (MPA constraints) as a soft regularizer—improving robustness and ecological plausibility of foraging predictions.
