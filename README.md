@@ -42,9 +42,9 @@ S(s,t) = \sigma\!\Big( \beta_0 + \sum_{j} \beta_j \, f_j\!\big(\mathbf{x}(s,t)\b
 ```
 
 where $f_j$ are (possibly transformed) covariates (linear, spline, thresholds) and $\sigma(z)=1/(1+e^{-z})$.  
-Coefficients $ \{\beta_j\} $ are fit to match empirical expectations under presence vs. background.  
+Coefficients $\beta_j$ are fit to match empirical expectations under presence vs. background.  
 
-**Interpretation.** $ S(s,t)\in(0,1) $ is a **suitability surface**: higher values indicate environmental conditions more consistent with observed presences.
+**Interpretation.** $S(s,t)\in(0,1)$ is a **suitability surface**: higher values indicate environmental conditions more consistent with observed presences.
 
 
 ### 1.4 BINN (Bayesian Inference Neural Network) for foraging
