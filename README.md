@@ -25,8 +25,9 @@ We consider the following environmental variables sampled on a spatiotemporal gr
 | **LIGHT** | Light availability / PAR proxy (mol photons m⁻² d⁻¹ or W m⁻²) | photic effects |
 | **CHL** | Chlorophyll-a (mg m⁻³) | productivity proxy |
 
-Let \( \mathbf{x}(s,t) = [\mathrm{SST}, \mathrm{dSST}, \mathrm{DEPTH}, \mathrm{EKE}, \mathrm{LIGHT}, \mathrm{CHL}] \) at location \(s\) and time \(t\). Presence points \( \{s_i,t_i\} \) from **SHARKS** define the observed occurrences.  
-We also extract **tag-derived features** \( \mathbf{z}_{	ext{tag}} \) (e.g., vertical activity, depth dynamics, acceleration summaries) when available.
+Let \( \mathbf{x}(s,t) = [\text{SST}, \text{dSST}, \text{DEPTH}, \text{EKE}, \text{LIGHT}, \text{CHL}] \) at location \( s \) and time \( t \).  
+Presence points \( \{s_i, t_i\} \) from **SHARKS** define the observed occurrences.  
+We also extract **tag-derived features** \( \mathbf{z}_{\text{tag}} \) (e.g., vertical activity, depth dynamics, acceleration summaries) when available.
 
 ### 1.3 MaxEnt (presence-only suitability)
 MaxEnt estimates a distribution over space–time that is maximally entropic subject to feature expectation constraints. In the logistic approximation for presence–background modeling, the **habitat suitability** (or relative occurrence intensity) can be written as:
