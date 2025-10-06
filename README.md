@@ -76,7 +76,7 @@ Both can be exported as rasters, tiles, or vector **GeoJSON** (contours/isolines
 ## 2) Data Flow / Pipeline
 
 ```mermaid
-flowchart LR
+flowchart TD
   A["Downloads (OB.DAAC / AVISO / other)<br/>extract/"] --> B["Raw samples per source<br/>downloads/&lt;var&gt;/sample/*"]
   B --> C["Inspect & QC<br/>transform/&lt;var&gt;/inspect.ipynb"]
   C --> D["Partitioned Parquet<br/>transform/&lt;var&gt;/sample/year=/month="]
