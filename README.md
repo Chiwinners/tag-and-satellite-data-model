@@ -1,178 +1,233 @@
-# Sharks from Space – Chiwinners
+# Sharks from Space — MaxEnt + BINN Foraging Model (Clean Markdown)
 
-![Model Overview](docs/img/model.png)
-
-This repository contains the end-to-end data and modeling stack for the **NASA Space Apps Challenge 2025 – Sharks from Space** (Team: **Chiwinners**).  
-It includes: dataset mocks with a final target schema, download & transform pipelines, a hybrid **MaxEnt + BINN** modeling module, lightweight simulation tools, and loaders to publish artifacts for the web app.
+> **Goal.** Build a space–time model that (1) estimates **habitat suitability** from presence‑only data using **MaxEnt**, and (2) predicts **foraging behavior** with a **Bayesian Inference Neural Network (BINN)** that is informed by the MaxEnt suitability. Outputs: suitability maps `S(s,t)` and foraging probability maps `FH(s,t)`.
 
 ---
 
-## 1) Mathematical Modeling
+## 1) Overview
 
-### 1.1 Problem framing
-We aim to estimate **habitat suitability** and **foraging probability** for sharks by combining **presence-only environmental modeling** (MaxEnt) with a **Bayesian Inference Neural Network (BINN)** that fuses environmental covariates, tag-derived features, and explicit spatial priors. Presence points come from **blue shark** tag locations; we denote the presence label as **`SHARKS`**.
-
-### 1.2 Environmental covariates (x, t)
-We consider the following environmental variables sampled on a spatiotemporal grid:
-
-| Variable | Meaning (unit) | Role |
-|---|---|---|
-| **SST** | Sea Surface Temperature (°C) | thermal habitat |
-| **dSST (DSST)** | Horizontal temperature gradient magnitude (°C/km) | frontal/edge dynamics |
-| **DEPTH** | Seafloor depth / bathymetry (m, positive down) | geomorphic constraint |
-| **EKE** | Eddy Kinetic Energy (m²/s²) | mesoscale turbulence |
-| **LIGHT** | Light availability / PAR proxy (mol photons m⁻² d⁻¹ or W m⁻²) | photic effects |
-| **CHL** | Chlorophyll-a (mg m⁻³) | productivity proxy |
-
-Let $ \mathbf{x}(s,t) = [\mathrm{SST}, \mathrm{dSST}, \mathrm{DEPTH}, \mathrm{EKE}, \mathrm{LIGHT}, \mathrm{CHL}] $ at location $s$ and time $t$. Presence points $ \{s_i,t_i\} $ from **SHARKS** define the observed occurrences.  
-We also extract **tag-derived features** $ \mathbf{z}_{\text{tag}} $ (e.g., vertical activity, depth dynamics, acceleration summaries) when available.
-
-### 1.3 MaxEnt (presence-only suitability)
-MaxEnt estimates a distribution over space–time that is maximally entropic subject to feature expectation constraints. In the logistic approximation for presence–background modeling, the **habitat suitability** (or relative occurrence intensity) can be written as:
-
-$$
-S(s,t) \;=\; \sigma\!\Big( \beta_0 \;+\; \sum_{j} \beta_j \, f_j\!\big(\mathbf{x}(s,t)\big) \Big)
-$$
-
-where $f_j$ are (possibly transformed) covariates (linear, spline, thresholds) and $\sigma(z)=1/(1+e^{-z})$. Coefficients $\{\beta_j\}$ are fit to match empirical expectations under presence vs. background.  
-**Interpretation.** $S(s,t)\in(0,1)$ is a **suitability surface**: higher values indicate environmental conditions more consistent with observed presences.
-
-### 1.4 BINN (Bayesian Inference Neural Network) for foraging
-We further predict **foraging behavior** with a BINN that integrates:
-- **Environmental covariates** $ \mathbf{x}(s,t) $
-- **Tag-derived variables** $ \mathbf{z}_{\text{tag}}(s,t) $
-- **MaxEnt suitability** $ S(s,t) $ as an **informative prior**
-- A **spatial regularizer** tied to the **Seaflower** MPA (Colombian Caribbean)
-
-Let $ \mathbf{z}(s,t) = [\mathbf{x}(s,t), \mathbf{z}_{\text{tag}}(s,t)] $. The BINN outputs a **foraging probability**:
-
-$$
-P\big(\mathrm{FH}=1 \mid \mathbf{z}(s,t)\big) \;=\; \sigma\!\Big( g_{\theta}\big(\mathbf{z}(s,t)\big) \;+\; \alpha \cdot \mathrm{logit}\big(S(s,t)\big) \;+\; \lambda \cdot R_{\mathrm{SF}}(s) \Big)
-$$
-
-where $g_{\theta}(\cdot)$ is a neural network (likelihood term), $\mathrm{logit}(S)=\ln\tfrac{S}{1-S}$ injects **MaxEnt** as a **prior** (weight $\alpha$), and $R_{\mathrm{SF}}(s)$ is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by $\lambda$.
-
-**Why BINN?** BINNs allow us to (i) retain a **principled prior** from presence-only ecology (MaxEnt), (ii) **fuse heterogeneous signals** (environment + tag dynamics), and (iii) **encode spatial knowledge** (MPA constraints) as a soft regularizer—improving robustness and ecological plausibility of foraging predictions.
-
-**Outputs.**
-- $S(s,t)$: habitat suitability.
-- $P(\mathrm{FH}=1\mid \cdot)$: foraging probability surface.  
-Both can be exported as rasters, tiles, or vector **GeoJSON** (contours/isolines or polygons after post-processing).
-
-### 1.5 Seaflower (ecological context)
-**Seaflower** is a large, biodiversity-rich marine region in the Colombian Caribbean, with coral reefs, seagrass meadows, and key habitats for pelagic species. We use a Seaflower polygon/mask to softly regularize predictions, aligning the model with known conservation areas and expected ecological patterns.
-
----
-
-## 2) Data Flow / Pipeline
+- **Environmental covariates** (gridded, satellite‑derived): SST (sea surface temperature), dSST (thermal gradient), DEPTH (bathymetry), EKE (eddy kinetic energy), LIGHT (PAR/daylength proxy), CHL (chlorophyll‑a).
+- **Tag‑derived features** (when available): summaries from biologging (vertical activity, depth dynamics, acceleration, diel patterns), denoted as **z_tag**.
+- **Presence data**: shark occurrence points (presence‑only). Background/pseudo‑absence points are sampled for training.
+- **Pipeline**: ingest → preprocess → **MaxEnt** suitability → **BINN** foraging (with prior informed by MaxEnt) → expert‑rule validation.
 
 ```mermaid
 flowchart LR
-  A[Downloads (OB.DAAC / AVISO / other)<br/>extract/] --> B[Raw samples per source<br/>downloads/<var>/sample/*]
-  B --> C[Inspect & QC<br/>transform/<var>/inspect.ipynb]
-  C --> D[Partitioned Parquet<br/>transform/<var>/sample/year=/month=]
-  D --> E[Unification (OBT)<br/>utils/unify_datasets.py -> data/ schema]
-  E --> F1[MaxEnt training<br/>model/train_maxent.py]
-  F1 --> G1[Suitability S(s,t)]
-  E --> F2[BINN training<br/>model/train_binn.py]
-  G1 --> F2
-  F2 --> G2[Foraging probability<br/>P(FH=1|·)]
-  G1 --> H[Prediction/Export<br/>model/predict.py -> GeoJSON]
-  G2 --> H
-  H --> I[Publish to Azure<br/>load/load.py -> web app]
+    A[Earthdata & AVISO downloads] --> B[Env layers: SST, dSST, DEPTH, EKE, LIGHT, CHL]
+    A2[Tag records] --> C[Tag features z_tag]
+    B --> D[Fit MaxEnt]
+    D --> E[S(s,t) suitability]
+    E --> F[BINN training with S(s,t) and z_tag]
+    C --> F
+    F --> G[FH(s,t) foraging probability]
+    G --> H[Validate with expert rules and papers]
 ```
 
-**Key artifacts.**  
-- **OBT** (One Big Table): analysis-ready join of tag + environmental covariates.  
-- **GeoJSON exports**: region polygons (e.g., Seaflower), convex hulls, and predicted foraging zones.
+**Repository layout (suggested)**
+
+```
+data/
+  example_env_{sst,dsst,depth,eke,light,chl}.csv
+  example_tag_*                  # tag raw / bins / joined env
+  example_maxent.csv             # (optional) precomputed demo
+
+model/
+  maxent/                        # fits, beta_hat, diagnostics
+  binn/                          # weights, priors, metrics
+  outputs/                       # maps: S(s,t), FH(s,t)
+
+notebooks/                       # EDA, sampling, maps
+src/                             # python modules & CLI
+```
+
+> In your project, you indicated that “models and everything associated will live under `/model/`”. Keep raw/intermediate data under `/data/` and code under `/src/` or `/notebooks/`.
 
 ---
 
-## 3) How to run the project
+## 2) Notation
 
-### 3.1 Create and activate a virtual environment
-```bash
-# Windows (PowerShell)
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+**Location–time index.** \( (s, t) \)
 
-# macOS / Linux
-python3 -m venv .venv
-source .venv/bin/activate
-```
+**Environmental covariate vector.**
+$$
+\mathbf{x}(s,t)=\big[x_1(s,t),\ldots,x_p(s,t)\big]
+=\big[\mathrm{SST},\mathrm{dSST},\mathrm{DEPTH},\mathrm{EKE},\mathrm{LIGHT},\mathrm{CHL}\big]^\top
+$$
 
-### 3.2 Install dependencies
-```bash
-pip install -r requirements.txt
-```
+**Tag‑derived features (when available).**
+$$
+\mathbf{z}_{\text{tag}}(s,t)\in\mathbb{R}^q
+$$
 
-### 3.3 Environment variables
-Create a `.env` file (or set at runtime) with:
-```
-EARTHDATA_TOKEN=<your_earthdata_token>
-AZURE_STORAGE_ACCOUNT_NAME=<your_account>
-AZURE_STORAGE_KEY=<your_key>
-```
-- `EARTHDATA_TOKEN`: NASA Earthdata/OB.DAAC downloads.
-- `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_KEY`: publish artifacts for the web app.
+**Presence indicator (foraging label).**
+$$
+Y_{s,t}\in\{0,1\}
+$$
 
-### 3.4 Typical commands (E2E)
-```bash
-# 1) Download samples (per source)
-bash extract/bash/download_sst.sh
-python extract/python/clorophyll.py
-python extract/python/eke.py
-python extract/python/depth.py
-
-# 2) Inspect & transform to partitioned Parquet
-#   (see transform/<var>/inspect.ipynb and transform/<var>/transform.ipynb)
-
-# 3) Unify into OBT / analysis-ready tables
-python utils/unify_datasets.py
-
-# 4) Train models
-python -m model.train_maxent --config model/config.py
-python -m model.train_binn  --config model/config.py
-
-# 5) Predict & export
-python -m model.predict --region seaflower --out load/data/seaflower_zf_prediction.geojson
-
-# 6) Publish to Azure
-python load/load.py --file load/data/seaflower_zf_prediction.geojson --blob-key seaflower_zf_prediction.geojson
-```
-
-### 3.5 Clean repository tree for docs (optional)
-Generate a tree that excludes heavy/ephemeral directories:
-```bash
-# Git Bash / MINGW64 / macOS / Linux
-find .   -path "./downloads/*/data*" -prune -o   -path "./.venv*" -prune -o   -path "./.git*" -prune -o   -print | sed 's|[^/]*/| |g' | sed 's| | |g' > tree.txt
-```
-Embed `tree.txt` into docs as needed.
+**Logistic function.**
+$$
+\sigma(z)=\frac{1}{1+e^{-z}}
+$$
 
 ---
 
-## 4) Modules overview
+## 3) MaxEnt (presence‑only suitability)
 
-- **`data/`** – Mock datasets in the final, analysis-ready schema + **`data_dictionary.txt`**.
-- **`downloads/`** – Source-specific folders with `sample/` files and `metadata.txt` (download notes, URLs if any).
-- **`transform/`** – Notebooks/scripts to **inspect** raw samples and **normalize** to the final schema (partitioned by `year=/month=`).
-- **`model/`**
-  - `maxent.py` — habitat suitability (presence-only).
-  - `binn.py` — BINN classifier for foraging (uses MaxEnt prior + spatial regularizer).
-  - `features.py`, `data_io.py`, `sampling.py`, `utils.py` — feature engineering and IO.
-  - `train_maxent.py`, `train_binn.py` — training entry points.
-  - `predict.py` — batch/geo prediction utilities.
-  - `config.py` — central configuration.
-- **`extract/`** – Bash/Python downloaders (NASA/OB.DAAC and others).
-- **`load/`** – Publish artifacts (e.g., GeoJSON) to **Azure Blob Storage**.
-- **`simulation/`** – Mock sensor generator for end-to-end tests.
-- **`docs/`** – Diagrams, images, documentation assets.
-- **`utils/`** – Local helpers (inspection, sampling, unification, AOI checks).
+MaxEnt estimates a distribution over space–time that is maximally entropic under feature‑expectation constraints. For presence–background modeling, a logistic approximation yields the **suitability surface**:
+
+**Suitability definition.**
+$$
+S(s,t)=\mathrm{MaxEnt}\!\big(\mathbf{x}(s,t)\big)
+=\sigma\!\left(\beta_0+\sum_{j=1}^{p}\beta_j\,f_j\!\big(x_j(s,t)\big)\right)
+$$
+
+Here \( f_j(\cdot) \) are engineered/transformed features (linear, splines, thresholds), and \( \beta \) are fitted to match empirical expectations under presence vs. background. Thus \( S(s,t)\in(0,1) \) and higher values indicate conditions more consistent with observed presences.
+
+**Training objective (logistic approximation with regularization).**
+$$
+\max_{\beta}
+\;\sum_{(s,t)\in\mathcal{P}} \log S(s,t)\;+\;
+\sum_{(s,t)\in\mathcal{B}} \log\!\big(1-S(s,t)\big)
+\;-\;\lambda\,\Omega(\beta)
+$$
+
+**Artifacts (recommended).**
+- `model/maxent/beta_hat.csv` — fitted coefficients \( \hat{\beta} \)
+- `model/outputs/suitability_map.*` — gridded \( S(s,t) \) (GeoTIFF/Parquet/NetCDF)
+- diagnostics: ROC/AUC, response curves, k‑fold CV
 
 ---
 
-## 5) Notes & acknowledgements
-- Keep secrets in `.env`; do not commit credentials or large raw datasets.
-- Large raw data live under `downloads/*/sample/` (and optionally `downloads/*/data`) and are excluded from doc trees.  
-- NASA Earthdata / OB.DAAC; AVISO products where applicable.  
-- Built for NASA Space Apps 2025 by **Team Chiwinners**.
+## 4) BINN (Bayesian Inference Neural Network) for foraging
+
+We predict **foraging** using a BINN that integrates the MaxEnt suitability and tag features.
+
+**Foraging probability.**
+$$
+\mathrm{FH}(s,t)
+=\Pr\!\big(Y_{s,t}=1 \mid S(s,t),\,\mathbf{z}_{\text{tag}}(s,t)\big)
+=\mathrm{BINN}\!\Big(S(s,t),\,\mathbf{z}_{\text{tag}}(s,t);\;\theta\Big)
+$$
+
+**Final logistic layer.**
+$$
+\mathrm{FH}(s,t)=\sigma\!\left(w^\top h_L(s,t)+b\right)
+$$
+
+**Hidden layers (schematic).**
+$$
+h_{k+1}(s,t)=\phi_{k+1}\!\Big(W_k\,h_k(s,t)\;\oplus\;U_k\,g_k\!\big(\mathbf{z}_{\text{tag}}(s,t)\big)+b_k\Big)
+$$
+
+**Input lift.**
+$$
+h_1(s,t)=\phi_1\!\big(c_1\,S(s,t)+d_1\big)
+$$
+
+**Bayesian prior informed by MaxEnt.**
+$$
+\theta \sim \mathcal{N}\!\big(\mu_0,\Sigma_0\big)
+$$
+
+**Prior mean from MaxEnt.**
+$$
+\mu_0 = A\,\hat{\beta}_{\text{MaxEnt}}
+$$
+
+**MAP objective (negative log‑posterior minimization).**
+$$
+\max_{\theta}\;
+\sum_{(s,t)} \log \mathrm{Bernoulli}\!\left(Y_{s,t}\,;\,\mathrm{FH}(s,t)\right)
+-\tfrac{1}{2}\,\big(\theta-\mu_0\big)^\top \Sigma_0^{-1}\big(\theta-\mu_0\big)
+$$
+
+**Functional composition (acronyms explicit).**
+$$
+\mathrm{FH}(s,t)=\mathrm{BINN}\!\Big(\underbrace{\mathrm{MaxEnt}\!\big(\mathbf{x}(s,t)\big)}_{S(s,t)},\,\mathbf{z}_{\text{tag}}(s,t);\theta\Big)
+$$
+
+**Artifacts (recommended).**
+- `model/binn/weights/` — posterior means (or samples) of \( \theta \)
+- `model/binn/metrics.json` — PR/ROC, calibration
+- `model/outputs/foraging_map.*` — gridded \( \mathrm{FH}(s,t) \)
+
+---
+
+## 5) Data expectations
+
+Minimum required inputs (time‑referenced and spatially indexed to \( (s,t) \)):
+
+- `data/example_env_sst.csv` — `lat, lon, time_bin, SST`
+- `data/example_env_dsst.csv` — `lat, lon, time_bin, dSST`
+- `data/example_env_depth.csv` — `DEPTH`
+- `data/example_env_eke.csv` — `EKE`
+- `data/example_env_light.csv` — `LIGHT`
+- `data/example_env_chl.csv` — `CHL`
+- `data/example_tag_*` — tag raw and aggregated bins (optional but recommended)
+- `data/example_obt_env_tag.csv` — One Big Table joining env + tag (optional convenience)
+- `data/example_maxent.csv` — precomputed demo suitability (optional)
+
+> Keep heavy raw downloads under `downloads/`, transformed tiles under `transform/`, and model‑ready tables under `data/`.
+
+---
+
+## 6) Quickstart (pseudo‑CLI)
+
+```bash
+# 1) Fit MaxEnt (presence‑only)
+python -m src.maxent.fit \
+  --env-root data \
+  --presence data/example_tag_agg_bin.csv \
+  --out model/maxent
+
+# 2) Produce suitability map
+python -m src.maxent.predict \
+  --env-root data \
+  --beta model/maxent/beta_hat.csv \
+  --out model/outputs/suitability_map.parquet
+
+# 3) Fit BINN (foraging) with MaxEnt prior
+python -m src.binn.fit \
+  --suit model/outputs/suitability_map.parquet \
+  --tag  data/example_obt_env_tag.csv \
+  --prior-from-maxent model/maxent/beta_hat.csv \
+  --out model/binn
+
+# 4) Predict foraging probability
+python -m src.binn.predict \
+  --suit model/outputs/suitability_map.parquet \
+  --tag  data/example_obt_env_tag.csv \
+  --weights model/binn/weights \
+  --out model/outputs/foraging_map.parquet
+```
+
+---
+
+## 7) Validation against expert rules
+
+After generating both `S(s,t)` and `FH(s,t)` maps, contrast them with rule‑based expectations from the literature (e.g., temperature ranges, front strengths, depth bands, productivity regimes). Store validations in `model/outputs/validation/` with summaries and overlays.
+
+---
+
+## 8) Rendering tips
+
+- **Math:** Use `$$ ... $$` for block equations and keep important formulas in their own block. Avoid spacing commands like `\;`, `\,`, `\!`, `\:`.
+- **Mermaid:** Use fenced code blocks with the `mermaid` identifier and simple, single‑line node labels for maximum compatibility.
+
+---
+
+## 9) Dependencies (suggested)
+
+- Python ≥ 3.10
+- `numpy`, `pandas`, `xarray`, `scipy`
+- `geopandas`, `shapely`, `pyproj`, `rasterio`
+- `scikit-learn` (feature transforms, CV utilities)
+- Deep learning: `pytorch` **or** `tensorflow` (choose one for BINN)
+- Data access: `earthaccess` (NASA Earthdata)
+- Plotting: `matplotlib`, `cartopy`
+
+---
+
+## 10) Citation
+
+If you use this model in a scientific context, please cite NASA/AVISO data sources accordingly and your repository release (Zenodo DOI recommended).
