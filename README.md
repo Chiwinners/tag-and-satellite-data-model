@@ -49,22 +49,23 @@ Coefficients $\beta_j$ are fit to match empirical expectations under presence vs
 
 ### 1.4 BINN (Bayesian Inference Neural Network) for foraging
 We further predict **foraging behavior** with a BINN that integrates:
-- **Environmental covariates** \( \mathbf{x}(s,t) \)
-- **Tag-derived variables** \( \mathbf{z}_{\text{tag}}(s,t) \)
-- **MaxEnt suitability** \( S(s,t) \) as an **informative prior**
+- **Environmental covariates** $\mathbf{x}(s,t)$
+- **Tag-derived variables** $\mathbf{z}_{\text{tag}}(s,t)$
+- **MaxEnt suitability** $S(s,t)$ as an **informative prior**
 - A **spatial regularizer** tied to the **Seaflower** MPA (Colombian Caribbean)
 
-Let \( \mathbf{z}(s,t) = [\mathbf{x}(s,t), \mathbf{z}_{\text{tag}}(s,t)] \). The BINN outputs a **foraging probability**:
-\[
+Let $\mathbf{z}(s,t) = [\mathbf{x}(s,t), \mathbf{z}_{\text{tag}}(s,t)]$. The BINN outputs a **foraging probability**:
+
+$$
 P\big(\mathrm{FH}=1 \mid \mathbf{z}(s,t)\big) \;=\; \sigma\!\Big( g_{\theta}\big(\mathbf{z}(s,t)\big) \;+\; \alpha \cdot \mathrm{logit}\big(S(s,t)\big) \;+\; \lambda \cdot R_{\mathrm{SF}}(s) \Big)
-\]
-where \(g_{\theta}(\cdot)\) is a neural network (likelihood term), \(\mathrm{logit}(S)=\ln\frac{S}{1-S}\) injects **MaxEnt** as a **prior** (weight \(\alpha\)), and \(R_{\mathrm{SF}}(s)\) is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by \(\lambda\).
+$$
+where $g_{\theta}(\cdot)$ is a neural network (likelihood term), $\mathrm{logit}(S)=\ln\frac{S}{1-S}$ injects **MaxEnt** as a **prior** (weight $\alpha$), and $R_{\mathrm{SF}}(s)$ is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by $\lambda$.
 
 **Why BINN?** BINNs allow us to (i) retain a **principled prior** from presence-only ecology (MaxEnt), (ii) **fuse heterogeneous signals** (environment + tag dynamics), and (iii) **encode spatial knowledge** (MPA constraints) as a soft regularizer—improving robustness and ecological plausibility of foraging predictions.
 
 **Outputs.**
-- \(S(s,t)\): habitat suitability.
-- \(P(\mathrm{FH}=1\mid \cdot)\): foraging probability surface.  
+- $S(s,t)$: habitat suitability.
+- $P(\mathrm{FH}=1\mid \cdot)$: foraging probability surface.  
 Both can be exported as rasters, tiles, or vector **GeoJSON** (contours/isolines or polygons after post-processing).
 
 ### 1.5 Seaflower (ecological context)
@@ -105,10 +106,17 @@ extract/] --> B[Raw samples per source
 - **GeoJSON exports**: region polygons (e.g., Seaflower), convex hulls, and predicted foraging zones.
 
 ---
+## 3) Expert rules
 
-## 3) How to run the project
+| **Rule Name**                         | **Description (Ecological Explanation)**                                                                                                                                                                                                                                      | **Key References**                                                                                                                                                                                                                                                                                                                                                                      | **Example Code Implementation**                                                                                                                                                                                                                                                                                                                                                      |                  |                       |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- | --------------------- |
+| **1. Gradient Aggregation Rule**      | Sharks tend to aggregate along **strong physical gradients** such as sea surface temperature (SST), sea surface height (SSH), or chlorophyll (Chl) fronts. These gradients mark **edges of mesoscale eddies and upwellings** that concentrate prey from lower trophic levels. | - Braun et al. (2019) *Mesoscale eddies release pelagic predators from thermal constraints.* **PNAS**.<br>- Scales et al. (2014) *Mesoscale fronts as ecological hotspots for marine predators.* **J. Marine Systems**.<br>- Arostegui et al. (2023) *Anticyclonic eddies aggregate pelagic predators in the open ocean.* **NOAA Tech Report.**                                         | ```python\nimport numpy as np\n# Compute horizontal gradients\nssh_grad = np.sqrt((dSSH_dx)**2 + (dSSH_dy)**2)\nsst_grad = np.sqrt((dSST_dx)**2 + (dSST_dy)**2)\nchl_grad = np.sqrt((dCHL_dx)**2 + (dCHL_dy)**2)\n\n# Define frontal zones\nfront_zone = (ssh_grad > 0.05)                                                                                                           | (sst_grad > 0.2) | (chl_grad > 0.3)\n``` |
+| **2. Lagged Productivity Rule**       | **Predator response lags** behind peaks in primary production (phytoplankton/chlorophyll). When chlorophyll increases, prey abundance rises days or weeks later. Incorporating **time-lagged chlorophyll anomalies** better represents real predator-prey dynamics.           | - Behrenfeld & Boss (2014) *Resurrecting the ecological underpinnings of ocean color.* **Science.**<br>- Hazen et al. (2013) *Predicted habitat shifts of Pacific top predators in a changing climate.* **Nature Climate Change.**<br>- Block et al. (2011) *Tracking apex marine predator movements in a dynamic ocean.* **Nature.**                                                   | `python\n# Compute lagged chlorophyll values (example: 1, 3, 7 days)\nfor lag in [1, 3, 7, 14]:\n    df[f\"chl_lag_{lag}d\"] = df[\"chlorophyll\"].shift(lag)\n\n# Compute chlorophyll anomaly\nrolling_mean = df[\"chlorophyll\"].rolling(window=30, min_periods=1).mean()\ndf[\"chl_anomaly\"] = df[\"chlorophyll\"] - rolling_mean\n`                                             |                  |                       |
+| **3. Optimal Thermal–Eddy Zone Rule** | Sharks prefer **intermediate temperatures** and **moderate eddy intensities**, where prey is concentrated but conditions remain stable for foraging. Too high/low SST or overly strong eddies reduce prey accessibility.                                                      | - Queiroz et al. (2016) *Ocean-wide tracking of pelagic sharks reveals extent of overlap with longline fishing hotspots.* **PNAS.**<br>- Gaube et al. (2018) *Mesoscale eddies influence the movement of pelagic predators.* **Nature Communications.**<br>- Scales et al. (2018) *On the front lines: frontal zones as priority regions for marine conservation.* **Nat. Ecol. Evol.** | `python\n# Gaussian preference around optimal SST (e.g., 24°C)\ndf[\"sst_optimal\"] = np.exp(-((df[\"sst\"] - 24)**2) / (2 * 3**2))\n\n# Gaussian preference around moderate eddy intensity (Okubo-Weiss parameter)\nmean, std = df[\"okubo_weiss\"].mean(), df[\"okubo_weiss\"].std()\ndf[\"eddy_strength_optimal\"] = np.exp(-((df[\"okubo_weiss\"] - mean)**2) / (2 * std**2))\n` |                  |                       |
 
-### 3.1 Create and activate a virtual environment
+## 4) How to run the project
+
+### 4.1 Create and activate a virtual environment
 ```bash
 # Windows (PowerShell)
 python -m venv .venv
@@ -119,12 +127,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3.2 Install dependencies
+### 4.2 Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3.3 Environment variables
+### 4.3 Environment variables
 Create a `.env` file (or set at runtime) with:
 ```
 EARTHDATA_TOKEN=<your_earthdata_token>
@@ -134,7 +142,7 @@ AZURE_STORAGE_KEY=<your_key>
 - `EARTHDATA_TOKEN`: NASA Earthdata/OB.DAAC downloads.
 - `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_KEY`: publish artifacts for the web app.
 
-### 3.4 Typical commands (E2E)
+### 4.4 Typical commands (E2E)
 ```bash
 # 1) Download samples (per source)
 bash extract/bash/download_sst.sh
@@ -159,7 +167,7 @@ python -m model.predict --region seaflower --out load/data/seaflower_zf_predicti
 python load/load.py --file load/data/seaflower_zf_prediction.geojson --blob-key seaflower_zf_prediction.geojson
 ```
 
-### 3.5 Clean repository tree for docs (optional)
+### 4.5 Clean repository tree for docs (optional)
 Generate a tree that excludes heavy/ephemeral directories:
 ```bash
 # Git Bash / MINGW64 / macOS / Linux
@@ -169,7 +177,7 @@ Embed `tree.txt` into docs as needed.
 
 ---
 
-## 4) Modules overview
+## 5) Modules overview
 
 - **`data/`** – Mock datasets in the final, analysis-ready schema + **`data_dictionary.txt`**.
 - **`downloads/`** – Source-specific folders with `sample/` files and `metadata.txt` (download notes, URLs if any).
@@ -189,7 +197,7 @@ Embed `tree.txt` into docs as needed.
 
 ---
 
-## 5) Notes & acknowledgements
+## 6) Notes & acknowledgements
 - Keep secrets in `.env`; do not commit credentials or large raw datasets.
 - Large raw data live under `downloads/*/sample/` (and optionally `downloads/*/data`) and are excluded from doc trees.  
 - NASA Earthdata / OB.DAAC; AVISO products where applicable.  
