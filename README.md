@@ -1,4 +1,4 @@
-# Sharks from Space – Chiwinners (Data + Model Repo)
+# Sharks from Space – Chiwinners
 
 ![Model Overview](docs/img/model.png)
 
@@ -24,35 +24,39 @@ We consider the following environmental variables sampled on a spatiotemporal gr
 | **LIGHT** | Light availability / PAR proxy (mol photons m⁻² d⁻¹ or W m⁻²) | photic effects |
 | **CHL** | Chlorophyll-a (mg m⁻³) | productivity proxy |
 
-Let \( \mathbf{x}(s,t) = [\mathrm{SST}, \mathrm{dSST}, \mathrm{DEPTH}, \mathrm{EKE}, \mathrm{LIGHT}, \mathrm{CHL}] \) at location \(s\) and time \(t\). Presence points \( \{s_i,t_i\} \) from **SHARKS** define the observed occurrences.  
-We also extract **tag-derived features** \( \mathbf{z}_{	ext{tag}} \) (e.g., vertical activity, depth dynamics, acceleration summaries) when available.
+Let $ \mathbf{x}(s,t) = [\mathrm{SST}, \mathrm{dSST}, \mathrm{DEPTH}, \mathrm{EKE}, \mathrm{LIGHT}, \mathrm{CHL}] $ at location $s$ and time $t$. Presence points $ \{s_i,t_i\} $ from **SHARKS** define the observed occurrences.  
+We also extract **tag-derived features** $ \mathbf{z}_{\text{tag}} $ (e.g., vertical activity, depth dynamics, acceleration summaries) when available.
 
 ### 1.3 MaxEnt (presence-only suitability)
 MaxEnt estimates a distribution over space–time that is maximally entropic subject to feature expectation constraints. In the logistic approximation for presence–background modeling, the **habitat suitability** (or relative occurrence intensity) can be written as:
-\[
+
+$$
 S(s,t) \;=\; \sigma\!\Big( \beta_0 \;+\; \sum_{j} \beta_j \, f_j\!\big(\mathbf{x}(s,t)\big) \Big)
-\]
-where \(f_j\) are (possibly transformed) covariates (linear, spline, thresholds) and \(\sigma(z)=1/(1+e^{-z})\). Coefficients \(\{\beta_j\}\) are fit to match empirical expectations under presence vs. background.  
-**Interpretation.** \(S(s,t)\in(0,1)\) is a **suitability surface**: higher values indicate environmental conditions more consistent with observed presences.
+$$
+
+where $f_j$ are (possibly transformed) covariates (linear, spline, thresholds) and $\sigma(z)=1/(1+e^{-z})$. Coefficients $\{\beta_j\}$ are fit to match empirical expectations under presence vs. background.  
+**Interpretation.** $S(s,t)\in(0,1)$ is a **suitability surface**: higher values indicate environmental conditions more consistent with observed presences.
 
 ### 1.4 BINN (Bayesian Inference Neural Network) for foraging
 We further predict **foraging behavior** with a BINN that integrates:
-- **Environmental covariates** \( \mathbf{x}(s,t) \)
-- **Tag-derived variables** \( \mathbf{z}_{\text{tag}}(s,t) \)
-- **MaxEnt suitability** \( S(s,t) \) as an **informative prior**
+- **Environmental covariates** $ \mathbf{x}(s,t) $
+- **Tag-derived variables** $ \mathbf{z}_{\text{tag}}(s,t) $
+- **MaxEnt suitability** $ S(s,t) $ as an **informative prior**
 - A **spatial regularizer** tied to the **Seaflower** MPA (Colombian Caribbean)
 
-Let \( \mathbf{z}(s,t) = [\mathbf{x}(s,t), \mathbf{z}_{\text{tag}}(s,t)] \). The BINN outputs a **foraging probability**:
-\[
+Let $ \mathbf{z}(s,t) = [\mathbf{x}(s,t), \mathbf{z}_{\text{tag}}(s,t)] $. The BINN outputs a **foraging probability**:
+
+$$
 P\big(\mathrm{FH}=1 \mid \mathbf{z}(s,t)\big) \;=\; \sigma\!\Big( g_{\theta}\big(\mathbf{z}(s,t)\big) \;+\; \alpha \cdot \mathrm{logit}\big(S(s,t)\big) \;+\; \lambda \cdot R_{\mathrm{SF}}(s) \Big)
-\]
-where \(g_{\theta}(\cdot)\) is a neural network (likelihood term), \(\mathrm{logit}(S)=\ln\frac{S}{1-S}\) injects **MaxEnt** as a **prior** (weight \(\alpha\)), and \(R_{\mathrm{SF}}(s)\) is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by \(\lambda\).
+$$
+
+where $g_{\theta}(\cdot)$ is a neural network (likelihood term), $\mathrm{logit}(S)=\ln\tfrac{S}{1-S}$ injects **MaxEnt** as a **prior** (weight $\alpha$), and $R_{\mathrm{SF}}(s)$ is a Seaflower-based spatial regularizer (e.g., mask or distance-to-boundary), weighted by $\lambda$.
 
 **Why BINN?** BINNs allow us to (i) retain a **principled prior** from presence-only ecology (MaxEnt), (ii) **fuse heterogeneous signals** (environment + tag dynamics), and (iii) **encode spatial knowledge** (MPA constraints) as a soft regularizer—improving robustness and ecological plausibility of foraging predictions.
 
 **Outputs.**
-- \(S(s,t)\): habitat suitability.
-- \(P(\mathrm{FH}=1\mid \cdot)\): foraging probability surface.  
+- $S(s,t)$: habitat suitability.
+- $P(\mathrm{FH}=1\mid \cdot)$: foraging probability surface.  
 Both can be exported as rasters, tiles, or vector **GeoJSON** (contours/isolines or polygons after post-processing).
 
 ### 1.5 Seaflower (ecological context)
@@ -64,28 +68,18 @@ Both can be exported as rasters, tiles, or vector **GeoJSON** (contours/isolines
 
 ```mermaid
 flowchart LR
-  A[Downloads (OB.DAAC / AVISO / other)
-extract/] --> B[Raw samples per source
- downloads/<var>/sample/*]
-  B --> C[Inspect & QC
- transform/<var>/inspect.ipynb]
-  C --> D[Partitioned Parquet
- transform/<var>/sample/year=/month=]
-  D --> E[Unification (OBT)
- utils/unify_datasets.py -> data/ schema]
-  E --> F1[MaxEnt training
- model/train_maxent.py]
+  A[Downloads (OB.DAAC / AVISO / other)<br/>extract/] --> B[Raw samples per source<br/>downloads/<var>/sample/*]
+  B --> C[Inspect & QC<br/>transform/<var>/inspect.ipynb]
+  C --> D[Partitioned Parquet<br/>transform/<var>/sample/year=/month=]
+  D --> E[Unification (OBT)<br/>utils/unify_datasets.py -> data/ schema]
+  E --> F1[MaxEnt training<br/>model/train_maxent.py]
   F1 --> G1[Suitability S(s,t)]
-  E --> F2[BINN training
- model/train_binn.py]
+  E --> F2[BINN training<br/>model/train_binn.py]
   G1 --> F2
-  F2 --> G2[Foraging probability
- P(FH=1|·)]
-  G1 --> H[Prediction/Export
- model/predict.py -> GeoJSON]
+  F2 --> G2[Foraging probability<br/>P(FH=1|·)]
+  G1 --> H[Prediction/Export<br/>model/predict.py -> GeoJSON]
   G2 --> H
-  H --> I[Publish to Azure
- load/load.py -> web app]
+  H --> I[Publish to Azure<br/>load/load.py -> web app]
 ```
 
 **Key artifacts.**  
