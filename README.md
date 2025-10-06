@@ -1,4 +1,4 @@
-# Sharks from Space – Chiwinners (Data + Model Repo)
+# Sharks from Space – Chiwinners
 
 ![Model Overview](docs/img/model.png)
 
